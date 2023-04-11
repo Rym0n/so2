@@ -47,7 +47,17 @@ void printMap(WINDOW *map) {         // Biore map i przechodze
         }
     }
 }
-void printPlayerInfo(PlayerInfo info){
+
+void printPlayers(WINDOW *map) {         // Biore map i przechodze
+    for (int y = 0; y < 25; y++) {
+        for (int x = 0; x < 52; x++) {
+            if (playerMapModel[y][x] != 0)
+                mvwprintw(map, y, x, "%c", playerMapModel[y][x]);
+        }
+    }
+}
+
+void printPlayerInfo(PlayerInfo info) {
 
 
     //AD 1
@@ -83,7 +93,7 @@ void printInfo(WINDOW *playerinfo, InfoMap server) {
     mvwprintw(playerinfo, 22, 29, "D    - dropped treasure");
 
     int x = strlen("Parameter:   ");
-    if(server.player1 !=NULL) {
+    if (server.player1 != NULL) {
         mvwprintw(playerinfo, 5, 28 + x, "Player%d", 1);
         mvwprintw(playerinfo, 6, 28 + x, "%d", server.player1->pid_t);
         mvwprintw(playerinfo, 7, 28 + x, "HUMAN");
@@ -93,33 +103,36 @@ void printInfo(WINDOW *playerinfo, InfoMap server) {
         mvwprintw(playerinfo, 13, 28 + x, "%d", server.player1->bank_coin);
     }
     int y = strlen("Player1  ");
-    if(server.player2!=NULL) {
+    if (server.player2 != NULL) {
         mvwprintw(playerinfo, 5, 28 + x + y, "Player%d", 2);
         mvwprintw(playerinfo, 6, 28 + x + y, "%d", server.player2->pid_t);
         mvwprintw(playerinfo, 7, 28 + x + y, "HUMAN");
         mvwprintw(playerinfo, 8, 28 + x + y, "%d/%d", server.player2->current_x, server.player2->current_y);
         mvwprintw(playerinfo, 9, 28 + x + y, "%d", server.player2->death_number);
-        mvwprintw(playerinfo, 12,28 + x + y, "%d", server.player2->current_coin);
-        mvwprintw(playerinfo, 13,28 + x + y, "%d", server.player2->bank_coin);
+        mvwprintw(playerinfo, 12, 28 + x + y, "%d", server.player2->current_coin);
+        mvwprintw(playerinfo, 13, 28 + x + y, "%d", server.player2->bank_coin);
     }
 }
 
-void addRound(InfoMap server){
-    server.roundNum +=1;
-    if(server.player1 !=NULL){
-        server.player1->round_number +=1;
+void addRound(InfoMap *server) {
+    server->roundNum += 1;
+    if (server->player1 != NULL) {
+        server->player1->round_number = server->roundNum;
     }
-    if(server.player2!=NULL){
-        server.player2->round_number +=1;
+    if (server->player2 != NULL) {
+        server->player2->round_number = server->roundNum;
     }
 }
 
-int map_random_location_player(char map[25][52], int *x, int *y)
-{
+int map_random_location_player(char map[25][52], int *x, int *y) {
+    int seed;
+    time_t tt;
+    seed = time(&tt);
+    srand(seed);
     int random_x, random_y;
-    while (1){
-        random_x = rand() % ((52-1) + 1);
-        random_y = rand() % ((25 -1) + 1);
+    while (1) {
+        random_x = rand() % ((52 - 1) + 1);
+        random_y = rand() % ((25 - 1) + 1);
 
         if (map[random_y][random_x] == ' ')
             break;
@@ -130,18 +143,15 @@ int map_random_location_player(char map[25][52], int *x, int *y)
 //    *y = 5;
     return 0;
 }
-int map_copy_to_player(char map[25][52], int x, int y, char dest[5][5])
-{
-    for (int i = 0; i < 5; ++i)
-    {
+
+int map_copy_to_player(char map[25][52], int x, int y, char dest[5][5]) {
+    for (int i = 0; i < 5; ++i) {
         int src_y = y + i;
 
-        for (int j = 0; j < 5; ++j)
-        {
+        for (int j = 0; j < 5; ++j) {
             int src_x = x + j;
 
-            if (src_y < 0 || src_x < 0 || src_y >= 25 || src_x >= 52)
-            {
+            if (src_y < 0 || src_x < 0 || src_y >= 25 || src_x >= 52) {
                 dest[i][j] = ' ';
                 continue;
             }
@@ -154,19 +164,47 @@ int map_copy_to_player(char map[25][52], int x, int y, char dest[5][5])
     }
 }
 
-void addMapPlayer(InfoMap server){
-    if(server.player1 !=NULL){
-        int x = (int) server.player1->current_x - (5/ 2);
-        int y = (int) server.player1->current_y- (5/ 2);
-        map_copy_to_player(MapModel,x,y,server.player1->player_map);
+void addMapPlayer(InfoMap *server) {
+    if (server->player1 != NULL) {
+        int x = (int) server->player1->current_x;
+        int y = (int) server->player1->current_y;
+        map_copy_to_player(MapModel, x - 2, y - 2, server->player1->player_map);
+        map_copy_to_player(playerMapModel, x - 2, y - 2, server->player1->player_map);
 
     }
-    if(server.player2!=NULL){
-        int x = (int) server.player2->current_x - (5/ 2);
-        int y = (int) server.player2->current_y- (5/ 2);
-        map_copy_to_player(MapModel,x,y,server.player2->player_map);
+    if (server->player2 != NULL) {
+        int x = (int) server->player2->current_x - (5 / 2);
+        int y = (int) server->player2->current_y - (5 / 2);
+        map_copy_to_player(MapModel, x, y, server->player2->player_map);
+        map_copy_to_player(playerMapModel, x, y, server->player2->player_map);
     }
 }
+
+void updatePositionPlayer(InfoMap *server) {
+    if (server->player1 != NULL) {
+        playerMapModel[server->player1->current_y][server->player1->current_x] = '1';
+    }
+    if (server->player2 != NULL) {
+        playerMapModel[server->player2->current_y][server->player2->current_x] = '2';
+    }
+}
+void newPositionPlayer(PlayerInfo *info) {
+        playerMapModel[info->current_y][info->current_x] = (char)(info->playerNumber +'0');
+}
+
+
+void clearPositionPlayer(InfoMap *server) {
+    if (server->player1 != NULL) {
+        playerMapModel[server->player1->current_y][server->player1->current_x] = 0;
+    }
+    if (server->player2 != NULL) {
+        playerMapModel[server->player2->current_y][server->player2->current_x] = 0;
+    }
+}
+void deletePositionPlayer(PlayerInfo *info) {
+        playerMapModel[info->current_y][info->current_x] = 0;
+}
+
 void *maintainPlayer(void *arg) {//potrzymanie polaczenia z graczem
     PlayerInfo *player = (PlayerInfo *) arg;
 
@@ -209,19 +247,18 @@ void *addPlayer(void *arg) { //u clienta to samo zeby sherowac memory
         if (playerNumber == 1) {
             pd = shm_open("Player1_Connection", O_CREAT | O_RDWR, 0600);
             ftruncate(pd, sizeof(PlayerInfo));
-            server->player1 = mmap(NULL, sizeof(PlayerInfo), PROT_WRITE | PROT_READ, MAP_SHARED, pd, 0); //tworzymy dla niego shared memory
+            server->player1 = mmap(NULL, sizeof(PlayerInfo), PROT_WRITE | PROT_READ, MAP_SHARED, pd,
+                                   0); //tworzymy dla niego shared memory
 
             server->player1->playerNumber = 1;
             server->player1->pid_t = PlayerJoin->playerPid;
             int locationX, locationY;
-            map_random_location_player(MapModel,&locationX,&locationY);
+            map_random_location_player(MapModel, &locationX, &locationY);
             server->player1->start_x = locationX;
             server->player1->start_y = locationY;
             server->player1->current_x = locationX;
-            server->player1->current_y= locationY;
-            int x = (int) server->player1->current_x - (5/ 2);
-            int y = (int) server->player1->current_y- (5/ 2);
-            map_copy_to_player(MapModel,x,y,server->player1->player_map);
+            server->player1->current_y = locationY;
+
         } else if (playerNumber == 2) {
             pd = shm_open("Player2_Connection", O_CREAT | O_RDWR, 0600);
             ftruncate(pd, sizeof(PlayerInfo));
@@ -231,16 +268,15 @@ void *addPlayer(void *arg) { //u clienta to samo zeby sherowac memory
             server->player2->pid_t = PlayerJoin->playerPid;
 
             int locationX, locationY;
-            map_random_location_player(MapModel,&locationX,&locationY);
+            map_random_location_player(MapModel, &locationX, &locationY);
             server->player2->start_x = locationX;
             server->player2->start_y = locationY;
             server->player2->current_x = locationX;
-            server->player2->current_y= locationY;
-            int x = (int) server->player2->current_x - (5/ 2);
-            int y = (int) server->player2->current_y- (5/ 2);
-            map_copy_to_player(MapModel,x,y,server->player2->player_map);
+            server->player2->current_y = locationY;
         }
 
+        updatePositionPlayer(server);
+        addMapPlayer(server);
 
         sem_post(&PlayerJoin->readyRequest);//dajemy znac clientowi
     }
@@ -340,14 +376,15 @@ void serverMaintain() {
     clock_t clock1 = clock();
 
     while (1) {
-        double time = (((double)clock())/CLOCKS_PER_SEC) - (((double)clock1)/CLOCKS_PER_SEC);
-        if(time>1.0) {
+        double time = (((double) clock()) / CLOCKS_PER_SEC) - (((double) clock1) / CLOCKS_PER_SEC);
+        if (time > 1.0) {
             printMap(map);
+            printPlayers(map);
             wrefresh(map);
             printInfo(playerInfo, server);
             wrefresh(playerInfo);
-            addRound(server);
-            addMapPlayer(server);
+            addRound(&server);
+            addMapPlayer(&server);
             clock1 = clock();
         }
 
