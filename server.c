@@ -37,6 +37,7 @@ char MapModel[25][52] = {
         "X XXX XXXXXXXXXXXXXXXXXXXXX#X XXXXXXX XXX X#    # X",
         "X   X                 ######X##         X    ##   X",
         "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"};
+char playerMapModel[25][52] = {0};
 WINDOW *debug;
 
 void printMap(WINDOW *map) {         // Biore map i przechodze
@@ -120,11 +121,13 @@ int map_random_location_player(char map[25][52], int *x, int *y)
         random_x = rand() % ((52-1) + 1);
         random_y = rand() % ((25 -1) + 1);
 
-        if (map[random_x][random_y] == ' ')
+        if (map[random_y][random_x] == ' ')
             break;
     }
     *x = random_x;
     *y = random_y;
+//    *x = 14;
+//    *y = 5;
     return 0;
 }
 int map_copy_to_player(char map[25][52], int x, int y, char dest[5][5])
@@ -251,6 +254,59 @@ void *addPlayer(void *arg) { //u clienta to samo zeby sherowac memory
     wrefresh(debug);
 }
 
+void *keyThread(void *arg) {
+    while (1) {
+        int x, y;
+        char temp = getchar();
+        if (temp == 'c') {
+            map_random_location_player(MapModel, &x, &y);
+            MapModel[y][x] = 'c';
+        }
+        if (temp == 't') {
+            map_random_location_player(MapModel, &x, &y);
+            MapModel[y][x] = 't';
+        }
+        if (temp == 'T') {
+            map_random_location_player(MapModel, &x, &y);
+            MapModel[y][x] = 'T';
+        }
+
+    }
+
+}
+
+void *playerMovementManager(void *arg) {
+    PlayerInfo *player = (PlayerInfo *) arg;
+    while (1) {
+        sem_wait(&player->movementSem);
+        int playerX = player->current_x;
+        int playerY = player->current_y;
+
+        if (player->movementKeyBlind == 'w') {
+            playerY += 1;
+
+        }
+        if (player->movementKeyBlind == 'a') {
+            playerX -= 1;
+        }
+        if (player->movementKeyBlind == 's') {
+            playerY -= 1;
+        }
+        if (player->movementKeyBlind == 'd') {
+
+            playerX += 1;
+        }
+        if (MapModel[playerY][playerX] == 'X') {
+            continue;
+        } else {
+            deletePositionPlayer(player);
+            player->current_y = playerY;
+            player->current_x = playerX;
+            newPositionPlayer(player);
+        }
+    }
+}
+
 
 void serverMaintain() {
 
@@ -272,10 +328,13 @@ void serverMaintain() {
     WINDOW *playerInfo = newwin(100, 100, 0, 28);
     //debug = newwin(50,50,0,0);
 
-    pthread_attr_t threadAtributeJoin; //atrybut do watku
-    pthread_attr_init(&threadAtributeJoin);
+//    pthread_attr_t threadAtributeJoin; //atrybut do watku
+//    pthread_attr_init(&threadAtributeJoin);
     pthread_t threadJoin;
-    pthread_create(&threadJoin, &threadAtributeJoin, addPlayer, &server);
+    pthread_create(&threadJoin, NULL, addPlayer, &server);
+
+    pthread_t threadKey;
+    pthread_create(&threadKey, NULL, keyThread, NULL);
 
     //Licznik Rund
     clock_t clock1 = clock();
@@ -290,7 +349,6 @@ void serverMaintain() {
             addRound(server);
             addMapPlayer(server);
             clock1 = clock();
-
         }
 
         //jak chce wyczyscic to uzywam werase

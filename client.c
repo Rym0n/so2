@@ -79,6 +79,7 @@ void clientMaintain() {
     while (1) {//PD zrobic mape
 
         printInfoPlayer(playerModel, *playerInfo);
+        wrefresh(playerModel);
 
         // wyslac klawisz
     }

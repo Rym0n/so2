@@ -19,11 +19,12 @@ typedef struct {
     int death_number;
     int current_coin;
     int bank_coin;
+    char movementKeyBlind;
 
     int round_number;
     int pid_server;
     char player_map [5][5];
-    sem_t serverOnlySem;
+    sem_t movementSem;
 }PlayerInfo;
 
 typedef struct{
