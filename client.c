@@ -76,6 +76,9 @@ void clientMaintain() {
     
     WINDOW *playerModel = newwin(100, 100, 0, 0);
 
+    pthread_t threadMovePlayer;
+    pthread_create(&threadMovePlayer, NULL, playerMovement, playerInfo);
+
     while (1) {//PD zrobic mape
 
         printInfoPlayer(playerModel, *playerInfo);
@@ -117,6 +120,21 @@ void printInfoPlayer(WINDOW *playerModel, PlayerInfo playerInfoModel) {
     mvwprintw(playerModel, 22, 29, "T    - large treasure (50 coins)");
     mvwprintw(playerModel, 22, 29, "A    - campsite");
     mvwprintw(playerModel, 22, 29, "D    - dropped treasure");
+}
+
+void *playerMovement(void *arg){
+    PlayerInfo *player = (PlayerInfo *) arg;
+    while(1){
+        sem_wait(&player->movementSem2);
+        char temp = getchar();
+
+        WINDOW *debug = newwin(10, 10, 15, 15);
+        mvwprintw(debug, 0, 0, "Button pressed: %c", temp);
+        wrefresh(debug);
+
+        player->movementKeyBlind = temp;
+        sem_post(&player->movementSem);
+    }
 }
 
 

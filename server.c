@@ -188,8 +188,9 @@ void updatePositionPlayer(InfoMap *server) {
         playerMapModel[server->player2->current_y][server->player2->current_x] = '2';
     }
 }
+
 void newPositionPlayer(PlayerInfo *info) {
-        playerMapModel[info->current_y][info->current_x] = (char)(info->playerNumber +'0');
+    playerMapModel[info->current_y][info->current_x] = (char) (info->playerNumber + '0');
 }
 
 
@@ -201,8 +202,9 @@ void clearPositionPlayer(InfoMap *server) {
         playerMapModel[server->player2->current_y][server->player2->current_x] = 0;
     }
 }
+
 void deletePositionPlayer(PlayerInfo *info) {
-        playerMapModel[info->current_y][info->current_x] = 0;
+    playerMapModel[info->current_y][info->current_x] = 0;
 }
 
 void *maintainPlayer(void *arg) {//potrzymanie polaczenia z graczem
@@ -220,6 +222,39 @@ void *maintainPlayer(void *arg) {//potrzymanie polaczenia z graczem
 
 
 }
+
+void *playerMovementManager(void *arg) {
+    PlayerInfo *player = (PlayerInfo *) arg;
+    while (1) {
+        sem_post(&player->movementSem2);
+        sem_wait(&player->movementSem);
+        int playerX = player->current_x;
+        int playerY = player->current_y;
+
+        if (player->movementKeyBlind == 'w') {
+            playerY += 1;
+        }
+        if (player->movementKeyBlind == 'a') {
+            playerX -= 1;
+        }
+        if (player->movementKeyBlind == 's') {
+            playerY -= 1;
+        }
+        if (player->movementKeyBlind == 'd') {
+
+            playerX += 1;
+        }
+        if (MapModel[playerY][playerX] == 'X') {
+            continue;
+        } else {
+            deletePositionPlayer(player);
+            player->current_y = playerY;
+            player->current_x = playerX;
+            newPositionPlayer(player);
+        }
+    }
+}
+
 
 void *addPlayer(void *arg) { //u clienta to samo zeby sherowac memory
     int fd = shm_open("joinPlayerSHM", O_RDWR | O_CREAT, 0600);
@@ -342,7 +377,6 @@ void *playerMovementManager(void *arg) {
         }
     }
 }
-
 
 void serverMaintain() {
 
