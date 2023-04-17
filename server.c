@@ -294,6 +294,9 @@ void *addPlayer(void *arg) { //u clienta to samo zeby sherowac memory
             server->player1->current_x = locationX;
             server->player1->current_y = locationY;
 
+            pthread_t threadMovePlayer1;
+            pthread_create(&threadMovePlayer1, NULL, playerMovementManager, &server->player1);
+
         } else if (playerNumber == 2) {
             pd = shm_open("Player2_Connection", O_CREAT | O_RDWR, 0600);
             ftruncate(pd, sizeof(PlayerInfo));
@@ -308,6 +311,9 @@ void *addPlayer(void *arg) { //u clienta to samo zeby sherowac memory
             server->player2->start_y = locationY;
             server->player2->current_x = locationX;
             server->player2->current_y = locationY;
+
+            pthread_t threadMovePlayer2;
+            pthread_create(&threadMovePlayer2, NULL, playerMovementManager, &server->player2);
         }
 
         updatePositionPlayer(server);
@@ -346,37 +352,6 @@ void *keyThread(void *arg) {
 
 }
 
-void *playerMovementManager(void *arg) {
-    PlayerInfo *player = (PlayerInfo *) arg;
-    while (1) {
-        sem_wait(&player->movementSem);
-        int playerX = player->current_x;
-        int playerY = player->current_y;
-
-        if (player->movementKeyBlind == 'w') {
-            playerY += 1;
-
-        }
-        if (player->movementKeyBlind == 'a') {
-            playerX -= 1;
-        }
-        if (player->movementKeyBlind == 's') {
-            playerY -= 1;
-        }
-        if (player->movementKeyBlind == 'd') {
-
-            playerX += 1;
-        }
-        if (MapModel[playerY][playerX] == 'X') {
-            continue;
-        } else {
-            deletePositionPlayer(player);
-            player->current_y = playerY;
-            player->current_x = playerX;
-            newPositionPlayer(player);
-        }
-    }
-}
 
 void serverMaintain() {
 

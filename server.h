@@ -24,7 +24,9 @@ typedef struct {
     int round_number;
     int pid_server;
     char player_map [5][5];
+
     sem_t movementSem;
+    sem_t movementSem2;
 }PlayerInfo;
 
 typedef struct{

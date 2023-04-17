@@ -9,9 +9,12 @@
 #include <pthread.h>
 #include "client.h"
 #include "server.h"
+#include <wchar.h>
 
 
 void printInfoPlayer(WINDOW *playerinfo, PlayerInfo playerInfoModel);
+void *playerMovement(void *arg);
+
 void clientMaintain() {
 
     int playerNumber = 0;
